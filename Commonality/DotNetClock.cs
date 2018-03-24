@@ -84,11 +84,6 @@ namespace Commonality
         /// <param name="t">How long</param>
         /// <returns>Awaitable task</returns>
         public Task Delay(TimeSpan t) => Task.Delay(t);
-
-        /// <summary>
-        /// Provide a means for a test class to override this
-        /// </summary>
-        protected DateTime InternalNow => DateTime.Now;
     }
 
     public interface ISystemClock
