@@ -21,5 +21,16 @@ namespace Commonality.Test
         {
             Assert.IsNotNull(Converter);
         }
+        [TestMethod]
+        public void DefaultFormat()
+        {
+            var dt = new DateTime(2018, 03, 23, 17, 50, 35);
+
+            var actual = Converter.Convert(dt, typeof(string), null);
+
+            var expected = dt.ToString();
+
+            Assert.AreEqual(expected, actual);
+        }
     }
 }
