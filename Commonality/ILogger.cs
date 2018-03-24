@@ -13,7 +13,7 @@ namespace Commonality
         /// <summary>
         /// Begin the logging session. Call the once when the app starts
         /// </summary>
-        void StartSession();
+        Task StartSession();
 
         /// <summary>
         /// Report an exception

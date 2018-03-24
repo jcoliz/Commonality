@@ -233,7 +233,7 @@ namespace Commonality.Test
             throw new NotImplementedException();
         }
 
-        void ILogger.StartSession()
+        Task ILogger.StartSession()
         {
             throw new NotImplementedException();
         }

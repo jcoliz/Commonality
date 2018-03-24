@@ -95,9 +95,9 @@ namespace Commonality
         /// <summary>
         /// Begin the logging session. Call the once when the app starts
         /// </summary>
-        public void StartSession()
+        public async Task StartSession()
         {
-            var ignore = Log(new[] { "Started" });
+            await Log(new[] { "Started" });
         }
 
 #pragma warning disable 1998
@@ -107,8 +107,11 @@ namespace Commonality
         /// <returns>List of all the log files</returns>
         public static async Task<IEnumerable<string>> GetLogs()
         {
-            var files = MyFileSystem.Directory.GetFiles(HomeDirectory + "Logs").Select(x => MyFileSystem.Path.GetFileName(x));
-            return files;
+            string[] files;
+            files = MyFileSystem.Directory.GetFiles(HomeDirectory + "Logs");
+
+            var select = files.Select(x => MyFileSystem.Path.GetFileName(x));
+            return select;
         }
 
         /// <summary>
@@ -173,7 +176,7 @@ namespace Commonality
                     }
 
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
 
                 }
