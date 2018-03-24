@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.IO.Abstractions.TestingHelpers;
 using System.Linq;
 using System.Text;
@@ -30,7 +31,6 @@ namespace Commonality.Test
             Assert.IsNotNull(Logger);
         }
 
-        // FAILS. Needs more work to mock out a filesystem for FileSystemLogger
         [TestMethod]
         public async Task StartSession()
         {
@@ -43,6 +43,28 @@ namespace Commonality.Test
             var expected = Clock.Now.ToBinary().ToString("x") + ".txt";
 
             Assert.AreEqual(expected,actual);
+        }
+
+        [TestMethod]
+        public async Task StartSessionAndRead()
+        {
+            await StartSession();
+
+            var lines = new List<string>();
+
+            using (var stream = await FileSystemLogger.OpenLogForRead(Clock.Now))
+            {
+                var sw = new StreamReader(stream);
+                while (! sw.EndOfStream)
+                {
+                    var line = await sw.ReadLineAsync();
+                    lines.Add(line);
+                }
+            }
+
+            Assert.AreEqual(2, lines.Count);
+            Assert.IsTrue(lines[0].Contains("Created"));
+            Assert.IsTrue(lines[1].Contains("Started"));
         }
 
     }

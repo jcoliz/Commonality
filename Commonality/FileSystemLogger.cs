@@ -135,6 +135,10 @@ namespace Commonality
         public static async Task<Stream> OpenLogForRead(DateTime dt)
         {
             var path = HomeDirectory + "Logs/" + dt.ToBinary().ToString("x") + ".txt";
+
+            // QUIRKS
+            path = path.Replace('/', '\\');
+            
             return MyFileSystem.File.OpenRead(path);
         }
 #pragma warning restore 1998
