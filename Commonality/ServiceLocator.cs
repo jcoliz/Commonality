@@ -39,7 +39,7 @@ namespace Commonality
 
         public static void Clear()
         {
-            RegisteredServices.Clear();
+            RegisteredServices = null;
         }
     }
 }
