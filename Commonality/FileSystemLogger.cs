@@ -33,6 +33,7 @@ namespace Commonality
         public FileSystemLogger(IFileSystem fileSystem)
         {
             MyFileSystem = fileSystem;
+            HomeDirectory = MyFileSystem.Directory.GetCurrentDirectory();
         }
 
         /// <summary>
@@ -168,6 +169,9 @@ namespace Commonality
                     if (!string.IsNullOrEmpty(dir))
                         MyFileSystem.Directory.CreateDirectory(dir);
 
+                    // QUIRKS
+                    path = path.Replace('/', '\\');
+
                     using (var stream = MyFileSystem.File.Create(path))
                     {
                         var sw = new StreamWriter(stream);
@@ -190,9 +194,11 @@ namespace Commonality
                 if (!string.IsNullOrEmpty(dir))
                     MyFileSystem.Directory.CreateDirectory(dir);
 
-                using (var stream = new FileStream(path, FileMode.Append))
+                // QUIRKS
+                path = path.Replace('/', '\\');
+
+                using (var sw = MyFileSystem.File.AppendText(path))
                 {
-                    var sw = new StreamWriter(stream);
                     foreach (var line in lines)
                         await sw.WriteLineAsync(FormattedLine(line));
                     await sw.FlushAsync();

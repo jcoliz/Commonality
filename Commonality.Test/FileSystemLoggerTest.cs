@@ -31,7 +31,7 @@ namespace Commonality.Test
         }
 
         // FAILS. Needs more work to mock out a filesystem for FileSystemLogger
-        //[TestMethod]
+        [TestMethod]
         public async Task StartSession()
         {
             await Logger.StartSession();
