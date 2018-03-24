@@ -55,7 +55,7 @@ namespace Commonality.Converters
             }
             else if (t == typeof(string))
             {
-                isdefault = value == null || (value as string).Length == 0;
+                isdefault = (value as string).Length == 0;
             }
             else
             {
