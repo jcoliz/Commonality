@@ -27,11 +27,11 @@ namespace Commonality
                 {
                     Offset = TimeSpan.FromTicks(long.Parse( Settings?.GetKey("Clock.Offset") ?? "0"));
                 }
-                return DateTime.Now + Offset.Value;
+                return InternalNow + Offset.Value;
             }
             set
             {
-                Offset = value - DateTime.Now;
+                Offset = value - InternalNow;
                 Settings?.SetKey("Clock.Offset", Offset.Value.Ticks.ToString());
             }
         }
@@ -62,5 +62,10 @@ namespace Commonality
         /// <param name="t">How long</param>
         /// <returns>Awaitable task</returns>
         public Task Delay(TimeSpan t) => Task.Delay(t);
+
+        /// <summary>
+        /// Provide a means for a test class to override this
+        /// </summary>
+        protected DateTime InternalNow => DateTime.Now;
     }
 }

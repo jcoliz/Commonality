@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Abstractions;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,8 +20,19 @@ namespace Commonality
         /// <param name="homedir">Directory where on the filesystem to store the logs</param>
         public FileSystemLogger(string homedir = null)
         {
+            MyFileSystem = new FileSystem();
+
             if (!string.IsNullOrEmpty(homedir))
                 HomeDirectory = homedir;
+        }
+
+        /// <summary>
+        /// Constructor, with an IFileSystem for testing
+        /// </summary>
+        /// <param name="homedir">Directory where on the filesystem to store the logs</param>
+        public FileSystemLogger(IFileSystem fileSystem)
+        {
+            MyFileSystem = fileSystem;
         }
 
         /// <summary>
@@ -95,7 +107,7 @@ namespace Commonality
         /// <returns>List of all the log files</returns>
         public static async Task<IEnumerable<string>> GetLogs()
         {
-            var files = Directory.GetFiles(HomeDirectory + "Logs").Select(x => Path.GetFileName(x));
+            var files = MyFileSystem.Directory.GetFiles(HomeDirectory + "Logs").Select(x => MyFileSystem.Path.GetFileName(x));
             return files;
         }
 
@@ -119,7 +131,7 @@ namespace Commonality
         public static async Task<Stream> OpenLogForRead(DateTime dt)
         {
             var path = HomeDirectory + "Logs/" + dt.ToBinary().ToString("x") + ".txt";
-            return File.OpenRead(path);
+            return MyFileSystem.File.OpenRead(path);
         }
 #pragma warning restore 1998
 
@@ -149,11 +161,11 @@ namespace Commonality
                 try
                 {
                     var path = HomeDirectory + SessionFilename;
-                    var dir = Path.GetDirectoryName(path);
+                    var dir = MyFileSystem.Path.GetDirectoryName(path);
                     if (!string.IsNullOrEmpty(dir))
-                        Directory.CreateDirectory(dir);
+                        MyFileSystem.Directory.CreateDirectory(dir);
 
-                    using (var stream = File.Create(path))
+                    using (var stream = MyFileSystem.File.Create(path))
                     {
                         var sw = new StreamWriter(stream);
                         await sw.WriteLineAsync(Time.ToString("u") + " Created");
@@ -171,9 +183,9 @@ namespace Commonality
             try
             {
                 var path = HomeDirectory + SessionFilename;
-                var dir = Path.GetDirectoryName(path);
+                var dir = MyFileSystem.Path.GetDirectoryName(path);
                 if (!string.IsNullOrEmpty(dir))
-                    Directory.CreateDirectory(dir);
+                    MyFileSystem.Directory.CreateDirectory(dir);
 
                 using (var stream = new FileStream(path, FileMode.Append))
                 {
@@ -216,5 +228,10 @@ namespace Commonality
         /// THe location on the filesystem where logs are to be written
         /// </summary>
         private static string HomeDirectory = string.Empty;
+
+        /// <summary>
+        /// Which filesystem we are using. This can be overriden for testing
+        /// </summary>
+        private static IFileSystem MyFileSystem;
     }
 }
