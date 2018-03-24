@@ -68,6 +68,6 @@ namespace Commonality
         /// Execute the command
         /// </summary>
         /// <param name="parameter">Untyped parameter passed straight through to the execute action sent in constructor</param>
-        public void Execute(object parameter) => executeAction?.Invoke(parameter);
+        public void Execute(object parameter) => executeAction.Invoke(parameter);
     }
 }
