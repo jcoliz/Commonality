@@ -56,5 +56,21 @@ namespace Commonality.Test
 
             Assert.AreEqual(expected, actual);
         }
+
+        [TestMethod]
+        [ExpectedException(typeof(NotImplementedException))]
+        public void ConvertBack()
+        {
+            Converter.ConvertBack(null, typeof(string), null);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(NotSupportedException))]
+        public void NotSupportedException()
+        {
+            var dt = new DateTime(2018, 03, 23, 17, 50, 35);
+            Converter.Convert(dt, typeof(int), null);
+        }
+
     }
 }

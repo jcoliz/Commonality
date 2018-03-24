@@ -42,7 +42,7 @@ namespace Commonality.Test
 
             Assert.AreEqual(expected, actual);
         }
-
+        
         [TestMethod]
         public void SpecificFormat()
         {
@@ -55,6 +55,21 @@ namespace Commonality.Test
             var expected = ts.ToString("hh\\:mm");
 
             Assert.AreEqual(expected, actual);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(NotImplementedException))]
+        public void ConvertBack()
+        {
+            Converter.ConvertBack(null, typeof(string), null);
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(NotSupportedException))]
+        public void NotSupportedException()
+        {
+            var ts = TimeSpan.FromHours(1.33);
+            Converter.Convert(ts, typeof(int), null);
         }
     }
 }
