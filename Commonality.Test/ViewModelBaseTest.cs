@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Commonality.Test
@@ -39,6 +40,12 @@ namespace Commonality.Test
             Assert.AreEqual(nameof(ViewModel.TestString), actual);
         }
         [TestMethod]
+        public void PropertyChangedViaContext()
+        {
+            Model = new ViewModel(new FakeContext());
+            PropertyChanged();
+        }
+        [TestMethod]
         public void PropertyChangedThrowsWhoCares()
         {
             Model.PropertyChanged += (s, e) =>
@@ -72,6 +79,12 @@ namespace Commonality.Test
 
             Assert.AreEqual(expected_code,actual_code);
             Assert.AreSame(expected_exception, actual_exception);
+        }
+        [TestMethod]
+        public void ExceptionRaisedViaContext()
+        {
+            Model = new ViewModel(new FakeContext());
+            ExceptionRaised();
         }
         [TestMethod]
         public void ExceptionRaisedIsLogged()
@@ -109,6 +122,12 @@ namespace Commonality.Test
             Model.Throw(expected_code, expected_exception);
         }
         [TestMethod]
+        public void ExceptionRaisedWhoCaresViaContext()
+        {
+            Model = new ViewModel(new FakeContext());
+            ExceptionRaisedWhoCares();
+        }
+        [TestMethod]
         public void MessageReady()
         {
             string actual = string.Empty;
@@ -122,6 +141,12 @@ namespace Commonality.Test
             Model.Message = expected;
 
             Assert.AreSame(expected, actual);
+        }
+        [TestMethod]
+        public void MessageReadyViaContext()
+        {
+            Model = new ViewModel(new FakeContext());
+            MessageReady();
         }
         [TestMethod]
         public void MessageReadyThrowsWhoCares()
@@ -140,10 +165,26 @@ namespace Commonality.Test
             var expected = "Hello!";
             Model.Message = expected;
         }
+        [TestMethod]
+        public void MessageReadyWhoCaresViaContext()
+        {
+            Model = new ViewModel(new FakeContext());
+            MessageReadyWhoCares();            
+        }
     }
 
     class ViewModel: ViewModelBase
     {
+        public ViewModel()
+        {
+
+        }
+
+        public ViewModel(SynchronizationContext context)
+        {
+            Context = context;
+        }
+
         public string TestString
         {
             set
@@ -195,6 +236,14 @@ namespace Commonality.Test
         void ILogger.StartSession()
         {
             throw new NotImplementedException();
+        }
+    }
+
+    class FakeContext: SynchronizationContext
+    {
+        public override void Post(SendOrPostCallback d, object state)
+        {
+            d.Invoke(state);
         }
     }
 }
