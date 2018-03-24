@@ -9,11 +9,13 @@ namespace Commonality.Test
     public class DotNetClockTest
     {
         private Clock ThisClock;
+        private TestSystemClock SystemClock;
 
         [TestInitialize]
         public void SetUp()
         {
-            ThisClock = new Clock();
+            SystemClock = new TestSystemClock();
+            ThisClock = new Clock(SystemClock);
         }
 
         [TestMethod]
@@ -21,5 +23,10 @@ namespace Commonality.Test
         {
             Assert.IsNotNull(ThisClock);
         }
+    }
+
+    class TestSystemClock: ISystemClock
+    {
+        public DateTime Now { get; set; }
     }
 }
