@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Abstractions;
 using System.IO.Abstractions.TestingHelpers;
 using System.Linq;
 using System.Text;
@@ -49,6 +50,14 @@ namespace Commonality.Test
         }
 
         [TestMethod]
+        public void EmptyWithFilesystem()
+        {
+            // Just make sure we can construct one without the abstracted file system
+            Logger = new FileSystemLogger("Home");
+            Assert.IsNotNull(Logger);
+        }
+
+        [TestMethod]
         public async Task StartSession()
         {
             await Logger.StartSession();
@@ -72,6 +81,16 @@ namespace Commonality.Test
             Assert.AreEqual(2, lines.Count);
             Assert.IsTrue(lines[0].Contains("Created"));
             Assert.IsTrue(lines[1].Contains("Started"));
+        }
+
+        [TestMethod]
+        public async Task StartSessionAndReadNoFilesystem()
+        {
+            // The purpose of this is to inject filesystem exceptions, and make sure we 
+            // recover cleanly and don't propagate exceptions out
+
+            Logger = new FileSystemLogger(new BogusFileSystem());
+            await Logger.StartSession();
         }
 
 
@@ -169,6 +188,47 @@ namespace Commonality.Test
             Assert.IsTrue(lines[2].Contains("FYI"));
         }
 
+        [TestMethod]
+        public async Task LogInfoSynchronous()
+        {
+            // If this starts failing, check the external semaphore timing.
+            await Logger.StartSession();
+            Logger.LogInfo("Hello");
+            await Logger.Wait();
+
+            var lines = await ReadLog();
+
+            Assert.AreEqual(3, lines.Count);
+            Assert.IsTrue(lines[2].Contains("Hello"));
+            Assert.IsTrue(lines[2].Contains("FYI"));
+        }
+        [TestMethod]
+        public async Task LogErrorWithParametersAndReadSynchronous()
+        {
+            await Logger.StartSession();
+            Logger.Error("ABC", new Exception("FAILED"));
+            await Logger.Wait();
+
+            var lines = await ReadLog();
+
+            Assert.AreEqual(4, lines.Count);
+            Assert.IsTrue(lines[2].Contains("ABC"));
+            Assert.IsTrue(lines[2].Contains("System.Exception"));
+            Assert.IsTrue(lines[3].Contains("FAILED"));
+        }
+        [TestMethod]
+        public async Task LogEventAndReadSynchronous()
+        {
+            await Logger.StartSession();
+            Logger.LogEvent("Hello");
+            await Logger.Wait();
+
+            var lines = await ReadLog();
+
+            Assert.AreEqual(3, lines.Count);
+            Assert.IsTrue(lines[2].Contains("Hello"));
+        }
+
     }
 
     class TestClock : IClock
@@ -178,5 +238,20 @@ namespace Commonality.Test
         public async Task Delay(TimeSpan t)
         {
         }
+    }
+
+    class BogusFileSystem : IFileSystem
+    {
+        public FileBase File => throw new NotImplementedException();
+
+        public DirectoryBase Directory => throw new NotImplementedException();
+
+        public IFileInfoFactory FileInfo => throw new NotImplementedException();
+
+        public PathBase Path => throw new NotImplementedException();
+
+        public IDirectoryInfoFactory DirectoryInfo => throw new NotImplementedException();
+
+        public IDriveInfoFactory DriveInfo => throw new NotImplementedException();
     }
 }

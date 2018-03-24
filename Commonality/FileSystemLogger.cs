@@ -33,7 +33,14 @@ namespace Commonality
         public FileSystemLogger(IFileSystem fileSystem)
         {
             MyFileSystem = fileSystem;
-            HomeDirectory = MyFileSystem.Directory.GetCurrentDirectory();
+            try
+            {
+                HomeDirectory = MyFileSystem.Directory.GetCurrentDirectory();
+            }
+            catch
+            {
+                // Ignore filesystem errors
+            }
         }
 
         /// <summary>
@@ -43,6 +50,7 @@ namespace Commonality
         /// <param name="ex">Exception to report</param>
         public void Error(string key, Exception ex)
         {
+            ExternalSemaphore.Wait();
             var ignore = ErrorAsync(key,ex);
         }
 
@@ -62,6 +70,10 @@ namespace Commonality
                 e = e.InnerException;
             }
             await Log(list);
+
+            if (ExternalSemaphore.CurrentCount == 0)
+                ExternalSemaphore.Release();
+
         }
 
         /// <summary>
@@ -71,6 +83,7 @@ namespace Commonality
         /// <param name="parameters">Additional parameters, usually 'key=value'</param>
         public void LogEvent(string message, params string[] parameters)
         {
+            ExternalSemaphore.Wait();
             var ignore = LogEventAsync(message,parameters);
         }
 
@@ -85,6 +98,9 @@ namespace Commonality
             var list = new List<string>(parameters.Select(x=>$", {x}"));
             list.Insert(0, $"Event: {message}");
             await Log(list);
+
+            if (ExternalSemaphore.CurrentCount == 0)
+                ExternalSemaphore.Release();
         }
 
         /// <summary>
@@ -93,12 +109,16 @@ namespace Commonality
         /// <param name="message">Descriptive message of what's goig on. Usually detailed</param>
         public void LogInfo(string message)
         {
+            ExternalSemaphore.Wait();
             var ignore = LogInfoAsync(message);
         }
 
         public async Task LogInfoAsync(string message)
         {
             await Log(new[] { $"FYI: {message}" });
+
+            if (ExternalSemaphore.CurrentCount == 0)
+                ExternalSemaphore.Release();
         }
 
         /// <summary>
@@ -107,6 +127,19 @@ namespace Commonality
         public async Task StartSession()
         {
             await Log(new[] { "Started" });
+        }
+
+        /// <summary>
+        /// Await until the current log has written
+        /// </summary>
+        /// <remarks>
+        /// Useful for unit testing the non-async methods
+        /// </remarks>
+        /// <returns></returns>
+        public async Task Wait()
+        {
+            await ExternalSemaphore.WaitAsync();
+            ExternalSemaphore.Release();
         }
 
 #pragma warning disable 1998
@@ -160,6 +193,12 @@ namespace Commonality
         /// Semaphore used to control access to the logs. Only one thread can write to logs at once!
         /// </summary>
         private SemaphoreSlim Semaphore = new SemaphoreSlim(1);
+
+        /// <summary>
+        /// Semaphore used to control access to syncrhonous loggers. In case you want to 'await'
+        /// a synchronous logging method
+        /// </summary>
+        private SemaphoreSlim ExternalSemaphore = new SemaphoreSlim(1);
 
         /// <summary>
         /// Internal method to actually write to the logs
