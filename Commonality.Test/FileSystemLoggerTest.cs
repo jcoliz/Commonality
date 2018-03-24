@@ -16,6 +16,23 @@ namespace Commonality.Test
         private MockFileSystem FileSystem;
         private TestClock Clock; 
 
+        private async Task<List<string>> ReadLog()
+        {
+            var lines = new List<string>();
+
+            using (var stream = await FileSystemLogger.OpenLogForRead(Clock.Now))
+            {
+                var sw = new StreamReader(stream);
+                while (!sw.EndOfStream)
+                {
+                    var line = await sw.ReadLineAsync();
+                    lines.Add(line);
+                }
+            }
+
+            return lines;
+        }
+
         [TestInitialize]
         public void SetUp()
         {
@@ -48,23 +65,26 @@ namespace Commonality.Test
         [TestMethod]
         public async Task StartSessionAndRead()
         {
-            await StartSession();
+            await Logger.StartSession();
 
-            var lines = new List<string>();
-
-            using (var stream = await FileSystemLogger.OpenLogForRead(Clock.Now))
-            {
-                var sw = new StreamReader(stream);
-                while (! sw.EndOfStream)
-                {
-                    var line = await sw.ReadLineAsync();
-                    lines.Add(line);
-                }
-            }
+            var lines = await ReadLog();
 
             Assert.AreEqual(2, lines.Count);
             Assert.IsTrue(lines[0].Contains("Created"));
             Assert.IsTrue(lines[1].Contains("Started"));
+        }
+
+
+        [TestMethod]
+        public async Task LogEventAndRead()
+        {
+            await Logger.StartSession();
+            await Logger.LogEventAsync("Hello");
+
+            var lines = await ReadLog();
+
+            Assert.AreEqual(3, lines.Count);
+            Assert.IsTrue(lines[2].Contains("Hello"));
         }
 
     }
