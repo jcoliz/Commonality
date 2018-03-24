@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Commonality.Test
 {
@@ -14,11 +15,7 @@ namespace Commonality.Test
         public void SetUp()
         {
             Model = new ViewModel();
-
-            Model.MessageReady += (s, e) =>
-            {
-
-            };
+            Service.Clear();
         }
 
         [TestMethod]
@@ -42,6 +39,21 @@ namespace Commonality.Test
             Assert.AreEqual(nameof(ViewModel.TestString), actual);
         }
         [TestMethod]
+        public void PropertyChangedThrowsWhoCares()
+        {
+            Model.PropertyChanged += (s, e) =>
+            {
+                throw new PlatformNotSupportedException();
+            };
+
+            Model.TestString = "NewValue";
+        }
+        [TestMethod]
+        public void PropertyChangedWhoCares()
+        {
+            Model.TestString = "NewValue";
+        }
+        [TestMethod]
         public void ExceptionRaised()
         {
             string actual_code = null;
@@ -62,6 +74,41 @@ namespace Commonality.Test
             Assert.AreSame(expected_exception, actual_exception);
         }
         [TestMethod]
+        public void ExceptionRaisedIsLogged()
+        {
+            var logger = new Logger();
+            Service.Set<ILogger>(logger);
+
+            string expected_code = "code";
+            Exception expected_exception = new NotImplementedException("Booo!");
+
+            Model.Throw(expected_code, expected_exception);
+
+            Assert.AreEqual(expected_code, logger.actual_code);
+            Assert.AreSame(expected_exception, logger.actual_exception);
+        }
+        [TestMethod]
+        public void ExceptionRaisedThrowsWhoCares()
+        {
+            Model.ExceptionRaised += (s, e) =>
+            {
+                throw new PlatformNotSupportedException();
+            };
+
+            string expected_code = "code";
+            Exception expected_exception = new NotImplementedException("Booo!");
+
+            Model.Throw(expected_code, expected_exception);
+        }
+        [TestMethod]
+        public void ExceptionRaisedWhoCares()
+        {
+            string expected_code = "code";
+            Exception expected_exception = new NotImplementedException("Booo!");
+
+            Model.Throw(expected_code, expected_exception);
+        }
+        [TestMethod]
         public void MessageReady()
         {
             string actual = string.Empty;
@@ -75,6 +122,23 @@ namespace Commonality.Test
             Model.Message = expected;
 
             Assert.AreSame(expected, actual);
+        }
+        [TestMethod]
+        public void MessageReadyThrowsWhoCares()
+        {
+            Model.MessageReady += (s, e) =>
+            {
+                throw new PlatformNotSupportedException();
+            };
+            var expected = "Hello!";
+
+            Model.Message = expected;
+        }
+        [TestMethod]
+        public void MessageReadyWhoCares()
+        {
+            var expected = "Hello!";
+            Model.Message = expected;
         }
     }
 
@@ -99,6 +163,38 @@ namespace Commonality.Test
         public void Throw(string code, Exception ex)
         {
             SetError(code, ex);
+        }
+    }
+
+    class Logger : ILogger
+    {
+        public string actual_code = null;
+        public Exception actual_exception = null;
+
+        void ILogger.Error(string key, Exception ex)
+        {
+            actual_code = key;
+            actual_exception = ex;
+        }
+
+        void ILogger.LogEvent(string message, params string[] parameters)
+        {
+            throw new NotImplementedException();
+        }
+
+        Task ILogger.LogEventAsync(string message, params string[] parameters)
+        {
+            throw new NotImplementedException();
+        }
+
+        void ILogger.LogInfo(string message)
+        {
+            throw new NotImplementedException();
+        }
+
+        void ILogger.StartSession()
+        {
+            throw new NotImplementedException();
         }
     }
 }

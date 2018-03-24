@@ -109,7 +109,15 @@ namespace Commonality
         /// <param name="property"></param>
         private void DoPropertyChanged(object property)
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(property as string));
+            try
+            {
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(property as string));
+            }
+            catch
+            {
+                // This can fail, and at this point we're in a really hard state to effectively report
+                // what just happened, so we are going to (reluctantly) swallow this.
+            }
         }
     }
 }
