@@ -18,15 +18,12 @@ namespace ManiaLabs.Portable.Tests
             changedevents = new List<string>();
 
             roc = new RangeObservableCollection<string>();
-            roc.AddRange(new[] { "A1", "B1", "B2", "C1", "C2", "C3" });
+            roc.CollectionChanged += Coll_CollectionChanged;
         }
         [TestMethod]
         public void ROC_Add()
         {
-            var coll = new RangeObservableCollection<string>();
-            coll.CollectionChanged += Coll_CollectionChanged;
-
-            coll.AddRange(new[] { "A", "B", "C" });
+            roc.AddRange(new[] { "A", "B", "C" });
 
             Assert.AreEqual(1, changedevents.Count);
             Assert.AreEqual("Reset", changedevents.Last());
@@ -35,37 +32,28 @@ namespace ManiaLabs.Portable.Tests
         [TestMethod]
         public void ROC_Insert()
         {
-            var coll = new RangeObservableCollection<string>();
-            coll.CollectionChanged += Coll_CollectionChanged;
-
-            coll.AddRange(new[] { "A", "B", "C" });
-            coll.InsertRange(1,new[] { "D", "E", "F" });
+            roc.AddRange(new[] { "A", "B", "C" });
+            roc.InsertRange(1,new[] { "D", "E", "F" });
 
             Assert.AreEqual(2, changedevents.Count);
             Assert.AreEqual("Reset", changedevents.Last());
-            Assert.AreEqual("A", coll[0]);
-            Assert.AreEqual("D", coll[1]);
-            Assert.AreEqual("B", coll[4]);
+            Assert.AreEqual("A", roc[0]);
+            Assert.AreEqual("D", roc[1]);
+            Assert.AreEqual("B", roc[4]);
         }
         [TestMethod]
         [ExpectedException(typeof(ArgumentNullException))]
         public void ROC_InsertNull()
         {
-            var coll = new RangeObservableCollection<string>();
-            coll.CollectionChanged += Coll_CollectionChanged;
-
-            coll.InsertRange(0,null);
+            roc.InsertRange(0,null);
         }
 
         [TestMethod]
         [ExpectedException(typeof(ArgumentNullException))]
         public void ROC_AddNull()
         {
-            var coll = new RangeObservableCollection<string>();
-
-            coll.AddRange(null);
+            roc.AddRange(null);
         }
-
 
         private void Coll_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
