@@ -13,6 +13,23 @@ namespace Commonality
     public class Clock : IClock
     {
         /// <summary>
+        /// Default constructor
+        /// </summary>
+        public Clock()
+        {
+
+        }
+
+        /// <summary>
+        /// Dependency-injection constructor
+        /// </summary>
+        /// <param name="clock"></param>
+        public Clock(ISystemClock clock)
+        {
+            InternalClock = clock;
+        }
+
+        /// <summary>
         /// Current time
         /// </summary>
         /// <remarks>
@@ -27,11 +44,11 @@ namespace Commonality
                 {
                     Offset = TimeSpan.FromTicks(long.Parse( Settings?.GetKey("Clock.Offset") ?? "0"));
                 }
-                return DateTime.Now + Offset.Value;
+                return InternalClock.Now + Offset.Value;
             }
             set
             {
-                Offset = value - DateTime.Now;
+                Offset = value - InternalClock.Now;
                 Settings?.SetKey("Clock.Offset", Offset.Value.Ticks.ToString());
             }
         }
@@ -50,6 +67,11 @@ namespace Commonality
         private TimeSpan? Offset;
 
         /// <summary>
+        /// Where to get the system time from. Injectable interface for testing
+        /// </summary>
+        private ISystemClock InternalClock = new SystemClock();
+
+        /// <summary>
         /// Wait for a certain amount of time
         /// </summary>
         /// <remarks>
@@ -62,5 +84,15 @@ namespace Commonality
         /// <param name="t">How long</param>
         /// <returns>Awaitable task</returns>
         public Task Delay(TimeSpan t) => Task.Delay(t);
+    }
+
+    public interface ISystemClock
+    {
+        DateTime Now { get; }
+    }
+
+    class SystemClock : ISystemClock
+    {
+        public DateTime Now => System.DateTime.Now;
     }
 }
