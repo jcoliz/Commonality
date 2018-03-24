@@ -32,5 +32,29 @@ namespace Commonality.Test
 
             Assert.AreEqual(expected, actual);
         }
+
+        [TestMethod]
+        public void NullInput()
+        {
+            var actual = Converter.Convert(null, typeof(string), null);
+
+            var expected = "---";
+
+            Assert.AreEqual(expected, actual);
+        }
+
+        [TestMethod]
+        public void SpecificFormat()
+        {
+            var dt = new DateTime(2018, 03, 23, 17, 50, 35);
+
+            var format = "t";
+
+            var actual = Converter.Convert(dt, typeof(string), format);
+
+            var expected = dt.ToString(format);
+
+            Assert.AreEqual(expected, actual);
+        }
     }
 }
