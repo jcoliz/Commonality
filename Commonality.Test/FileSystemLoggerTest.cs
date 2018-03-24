@@ -86,6 +86,48 @@ namespace Commonality.Test
             Assert.AreEqual(3, lines.Count);
             Assert.IsTrue(lines[2].Contains("Hello"));
         }
+        
+        [TestMethod]
+        public async Task LogEventWithParametersAndRead()
+        {
+            await Logger.StartSession();
+            await Logger.LogEventAsync("Hello", new[] { "AAA=BBB","CCC=DDD" });
+
+            var lines = await ReadLog();
+
+            Assert.AreEqual(5, lines.Count);
+            Assert.IsTrue(lines[3].Contains("AAA"));
+            Assert.IsTrue(lines[3].Contains("BBB"));
+            Assert.IsTrue(lines[4].Contains("CCC"));
+            Assert.IsTrue(lines[4].Contains("DDD"));
+        }
+
+        [TestMethod]
+        public async Task LogErrorWithParametersAndRead()
+        {
+            await Logger.StartSession();
+            await Logger.ErrorAsync("ABC", new Exception("FAILED"));
+
+            var lines = await ReadLog();
+
+            Assert.AreEqual(4, lines.Count);
+            Assert.IsTrue(lines[2].Contains("ABC"));
+            Assert.IsTrue(lines[2].Contains("System.Exception"));
+            Assert.IsTrue(lines[3].Contains("FAILED"));
+        }
+
+        [TestMethod]
+        public async Task LogInfoAndRead()
+        {
+            await Logger.StartSession();
+            await Logger.LogInfoAsync("Hello");
+
+            var lines = await ReadLog();
+
+            Assert.AreEqual(3, lines.Count);
+            Assert.IsTrue(lines[2].Contains("Hello"));
+            Assert.IsTrue(lines[2].Contains("FYI"));
+        }
 
     }
 

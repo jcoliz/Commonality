@@ -43,12 +43,17 @@ namespace Commonality
         /// <param name="ex">Exception to report</param>
         public void Error(string key, Exception ex)
         {
+            var ignore = ErrorAsync(key,ex);
+        }
+
+        public async Task ErrorAsync(string key, Exception ex)
+        {
             var list = new List<string>();
 
             list.Add($"Error: {key}/{ex.GetType().ToString()}");
-            if (ex.StackTrace?.Length > 0)
+            if ( ! string.IsNullOrEmpty( ex.StackTrace ) )
                 list.Add($", Stack = {ex.StackTrace}");
-            if (ex.Source?.Length > 0)
+            if ( ! string.IsNullOrEmpty(ex.Source) )
                 list.Add($", Source = {ex.Source}");
             Exception e = ex;
             while (e != null)
@@ -56,7 +61,7 @@ namespace Commonality
                 list.Add($", Message = {e.GetType().ToString()} {e.Message}");
                 e = e.InnerException;
             }
-            var ignore = Log(list);
+            await Log(list);
         }
 
         /// <summary>
@@ -66,9 +71,7 @@ namespace Commonality
         /// <param name="parameters">Additional parameters, usually 'key=value'</param>
         public void LogEvent(string message, params string[] parameters)
         {
-            var list = new List<string>(parameters.Select(x => $", {x}"));
-            list.Insert(0, $"Event: {message}");
-            var ignore = Log(list);
+            var ignore = LogEventAsync(message,parameters);
         }
 
         /// <summary>
@@ -90,7 +93,12 @@ namespace Commonality
         /// <param name="message">Descriptive message of what's goig on. Usually detailed</param>
         public void LogInfo(string message)
         {
-            var ignore = Log(new[] { $"FYI: {message}" });
+            var ignore = LogInfoAsync(message);
+        }
+
+        public async Task LogInfoAsync(string message)
+        {
+            await Log(new[] { $"FYI: {message}" });
         }
 
         /// <summary>
