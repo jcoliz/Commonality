@@ -86,7 +86,20 @@ namespace Commonality.Test
             Assert.AreEqual(3, lines.Count);
             Assert.IsTrue(lines[2].Contains("Hello"));
         }
-        
+
+        [TestMethod]
+        public async Task LogEventAndReadNoClock()
+        {
+            await Logger.StartSession();
+            Service.Clear();
+            await Logger.LogEventAsync("Hello");
+
+            var lines = await ReadLog();
+
+            Assert.AreEqual(3, lines.Count);
+            Assert.IsTrue(lines[2].Contains("Hello"));
+        }
+
         [TestMethod]
         public async Task LogEventWithParametersAndRead()
         {
@@ -114,6 +127,33 @@ namespace Commonality.Test
             Assert.IsTrue(lines[2].Contains("ABC"));
             Assert.IsTrue(lines[2].Contains("System.Exception"));
             Assert.IsTrue(lines[3].Contains("FAILED"));
+        }
+
+        [TestMethod]
+        public async Task LogErrorWithMoreParametersAndRead()
+        {
+            await Logger.StartSession();
+
+            Exception expected = null;
+            try
+            {
+                throw new Exception("FAILED") { Source = "TEST" };
+            }
+            catch(Exception ex)
+            {
+                expected = ex;
+            }
+
+            await Logger.ErrorAsync("ABC", expected);
+
+            var lines = await ReadLog();
+
+            Assert.AreEqual(6, lines.Count);
+            Assert.IsTrue(lines[2].Contains("ABC"));
+            Assert.IsTrue(lines[2].Contains("System.Exception"));
+            Assert.IsTrue(lines[3].Contains("LogErrorWithMoreParametersAndRead"));
+            Assert.IsTrue(lines[4].Contains("TEST"));
+            Assert.IsTrue(lines[5].Contains("FAILED"));
         }
 
         [TestMethod]
