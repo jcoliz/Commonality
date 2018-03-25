@@ -176,6 +176,32 @@ namespace Commonality.Test
         }
 
         [TestMethod]
+        public async Task LogErrorWithMoreParametersAndReadNew()
+        {
+            await Logger.StartSession();
+
+            Exception expected = null;
+            try
+            {
+                throw new Exception("FAILED") { Source = "TEST" };
+            }
+            catch (Exception ex)
+            {
+                expected = ex;
+            }
+
+            await Logger.LogErrorAsync(expected);
+
+            var lines = await ReadLog();
+
+            Assert.AreEqual(5, lines.Count);
+            Assert.IsTrue(lines[2].Contains("TEST"));
+            Assert.IsTrue(lines[2].Contains("System.Exception"));
+            Assert.IsTrue(lines[3].Contains("LogErrorWithMoreParametersAndRead"));
+            Assert.IsTrue(lines[4].Contains("FAILED"));
+        }
+
+        [TestMethod]
         public async Task LogInfoAndRead()
         {
             await Logger.StartSession();
@@ -207,6 +233,20 @@ namespace Commonality.Test
         {
             await Logger.StartSession();
             Logger.Error("ABC", new Exception("FAILED"));
+            await Logger.Wait();
+
+            var lines = await ReadLog();
+
+            Assert.AreEqual(4, lines.Count);
+            Assert.IsTrue(lines[2].Contains("ABC"));
+            Assert.IsTrue(lines[2].Contains("System.Exception"));
+            Assert.IsTrue(lines[3].Contains("FAILED"));
+        }
+        [TestMethod]
+        public async Task LogErrorWithParametersAndReadSynchronousNew()
+        {
+            await Logger.StartSession();
+            Logger.LogError(new Exception("FAILED") { Source = "ABC" });
             await Logger.Wait();
 
             var lines = await ReadLog();

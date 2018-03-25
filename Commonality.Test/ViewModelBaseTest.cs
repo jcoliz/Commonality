@@ -95,6 +95,18 @@ namespace Commonality.Test
             Assert.AreSame(expected_exception, logger.actual_exception);
         }
         [TestMethod]
+        public void ExceptionRaisedIsLoggedOldStyle()
+        {
+            var logger = new Logger();
+            Service.Set<ILogger>(logger);
+
+            Exception expected_exception = new NotImplementedException("Booo!") { Source = "code" };
+
+            Model.ThrowOldStyle(expected_exception);
+
+            Assert.AreSame(expected_exception, logger.actual_exception);
+        }
+        [TestMethod]
         public void ExceptionRaisedThrowsWhoCares()
         {
             Model.ExceptionRaised += (s, e) =>
@@ -105,6 +117,11 @@ namespace Commonality.Test
             Exception expected_exception = new NotImplementedException("Booo!") { Source = "code" };
 
             Model.Throw(expected_exception);
+        }
+        [TestMethod]
+        public void ExceptionRaisedThrowsWhoCaresOldStyle()
+        {
+            Model.ThrowNulls(null);
         }
         [TestMethod]
         public void ExceptionRaisedWhoCares()
@@ -196,6 +213,15 @@ namespace Commonality.Test
         public void Throw(Exception ex)
         {
             SetError(ex);
+        }
+
+        public void ThrowOldStyle(Exception ex)
+        {
+            SetError(ex.Source,ex);
+        }
+        public void ThrowNulls(Exception ex)
+        {
+            SetError(null, null);
         }
     }
 
