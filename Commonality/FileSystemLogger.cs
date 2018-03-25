@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Abstractions;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using MyFileSystem = System.IO;
 
 namespace Commonality
 {
@@ -20,12 +20,14 @@ namespace Commonality
         /// <param name="homedir">Directory where on the filesystem to store the logs</param>
         public FileSystemLogger(string homedir = null)
         {
+#if IO_ABSTRACTRIONS
             MyFileSystem = new FileSystem();
-
+#endif
             if (!string.IsNullOrEmpty(homedir))
                 HomeDirectory = homedir;
         }
 
+#if IO_ABSTRACTRIONS
         /// <summary>
         /// Constructor, with an IFileSystem for testing
         /// </summary>
@@ -42,6 +44,7 @@ namespace Commonality
                 // Ignore filesystem errors
             }
         }
+#endif
 
         /// <summary>
         /// Report an exception
@@ -327,9 +330,12 @@ namespace Commonality
         /// </summary>
         private static string HomeDirectory = string.Empty;
 
+#if IO_ABSTRACTRIONS
         /// <summary>
         /// Which filesystem we are using. This can be overriden for testing
         /// </summary>
         private static IFileSystem MyFileSystem;
+#endif
+
     }
 }
