@@ -8,6 +8,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+// :( Cannot test filesystemlogger because can't use system.io.abstractions, because doesn't work on UWP :(:(
+
+#if IO_ABSTRACTIONS
 namespace Commonality.Test
 {
     [TestClass]
@@ -295,3 +298,4 @@ namespace Commonality.Test
         public IDriveInfoFactory DriveInfo => throw new NotImplementedException();
     }
 }
+#endif
