@@ -10,24 +10,9 @@ namespace Commonality
     public class ViewModelBase : INotifyPropertyChanged
     {
         /// <summary>
-        /// Encapsulates an exception and a unique code. This can be used
-        /// to log the exception and tie back to where it was raised.
-        /// </summary>
-        public class ExceptionArgs
-        {
-            public string code;
-            public Exception ex;
-
-            public ExceptionArgs(Exception _ex, string _code = null)
-            {
-                ex = _ex;
-                code = _code;
-            }
-        }
-        /// <summary>
         /// Event raised when we have an exception.
         /// </summary>
-        public event EventHandler<ExceptionArgs> ExceptionRaised;
+        public event EventHandler<Exception> ExceptionRaised;
 
         /// <summary>
         /// Event raised when we have an informational message for the user.
@@ -46,18 +31,40 @@ namespace Commonality
         /// <summary>
         /// Raise the ExceptionRaised event
         /// </summary>
+        /// <remarks>
+        /// DEPRECATED. Use SetError(Exception), and include the location code in ex.Source
+        /// </remarks>
         /// <param name="code"></param>
         /// <param name="ex"></param>
         protected void SetError(string code, Exception ex)
         {
             try
             {
-                if (Context != null)
-                    Context.Post(o => ExceptionRaised?.Invoke(this, new ExceptionArgs(ex, code)), null);
-                else
-                    ExceptionRaised?.Invoke(this, new ExceptionArgs(ex, code));
+                ex.Source = code;
+                SetError(ex);
+            }
+            catch (Exception)
+            {
+                // This can fail, and at this point we're in a really hard state to effectively report
+                // what just happened, so we are going to (reluctantly) swallow this.
+            }
+        }
 
-                Service.TryGet<ILogger>()?.Error(code, ex);
+        /// <summary>
+        /// Raise the ExceptionRaised event
+        /// </summary>
+        /// <param name="code"></param>
+        /// <param name="ex"></param>
+        protected void SetError(Exception ex)
+        {
+            try
+            {
+                if (Context != null)
+                    Context.Post(o => ExceptionRaised?.Invoke(this, ex), null);
+                else
+                    ExceptionRaised?.Invoke(this, ex);
+
+                Service.TryGet<ILogger>()?.LogError(ex);
             }
             catch (Exception)
             {

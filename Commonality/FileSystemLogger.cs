@@ -73,7 +73,45 @@ namespace Commonality
 
             if (ExternalSemaphore.CurrentCount == 0)
                 ExternalSemaphore.Release();
+        }
 
+        /// <summary>
+        /// Report an exception
+        /// </summary>
+        /// <remarks>
+        /// Expects a short tag in ex.Source, which some backend services will use for aggregation
+        /// </remarks>
+        /// <param name="ex">Exception to report</param>
+        public void LogError(Exception ex)
+        {
+            ExternalSemaphore.Wait();
+            var ignore = LogErrorAsync(ex);
+        }
+
+        /// <summary>
+        /// Report an exception asynchronously
+        /// </summary>
+        /// <remarks>
+        /// Expects a short tag in ex.Source, which some backend services will use for aggregation
+        /// </remarks>
+        /// <param name="ex">Exception to report</param>
+        public async Task LogErrorAsync(Exception ex)
+        {
+            var list = new List<string>();
+
+            list.Add($"Error: {ex.Source}/{ex.GetType().ToString()}");
+            if (!string.IsNullOrEmpty(ex.StackTrace))
+                list.Add($", Stack = {ex.StackTrace}");
+            Exception e = ex;
+            while (e != null)
+            {
+                list.Add($", Message = {e.GetType().ToString()} {e.Message}");
+                e = e.InnerException;
+            }
+            await Log(list);
+
+            if (ExternalSemaphore.CurrentCount == 0)
+                ExternalSemaphore.Release();
         }
 
         /// <summary>
@@ -231,9 +269,9 @@ namespace Commonality
                     }
 
                 }
-                catch (Exception ex)
+                catch
                 {
-
+                    // We're too deep here to do anything good with exceptions now
                 }
 
             }

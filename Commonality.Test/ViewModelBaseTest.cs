@@ -63,21 +63,17 @@ namespace Commonality.Test
         [TestMethod]
         public void ExceptionRaised()
         {
-            string actual_code = null;
             Exception actual_exception = null;
 
             Model.ExceptionRaised += (s, e) =>
             {
-                actual_code = e.code;
-                actual_exception = e.ex;
+                actual_exception = e;
             };
 
-            string expected_code = "code";
-            Exception expected_exception = new NotImplementedException("Booo!");
+            Exception expected_exception = new NotImplementedException("Booo!") { Source = "code" };
 
-            Model.Throw(expected_code, expected_exception);
+            Model.Throw(expected_exception);
 
-            Assert.AreEqual(expected_code,actual_code);
             Assert.AreSame(expected_exception, actual_exception);
         }
         [TestMethod]
@@ -92,12 +88,10 @@ namespace Commonality.Test
             var logger = new Logger();
             Service.Set<ILogger>(logger);
 
-            string expected_code = "code";
-            Exception expected_exception = new NotImplementedException("Booo!");
+            Exception expected_exception = new NotImplementedException("Booo!") { Source = "code" };
 
-            Model.Throw(expected_code, expected_exception);
+            Model.Throw(expected_exception);
 
-            Assert.AreEqual(expected_code, logger.actual_code);
             Assert.AreSame(expected_exception, logger.actual_exception);
         }
         [TestMethod]
@@ -108,18 +102,16 @@ namespace Commonality.Test
                 throw new PlatformNotSupportedException();
             };
 
-            string expected_code = "code";
-            Exception expected_exception = new NotImplementedException("Booo!");
+            Exception expected_exception = new NotImplementedException("Booo!") { Source = "code" };
 
-            Model.Throw(expected_code, expected_exception);
+            Model.Throw(expected_exception);
         }
         [TestMethod]
         public void ExceptionRaisedWhoCares()
         {
-            string expected_code = "code";
-            Exception expected_exception = new NotImplementedException("Booo!");
+            Exception expected_exception = new NotImplementedException("Booo!") { Source = "code" };
 
-            Model.Throw(expected_code, expected_exception);
+            Model.Throw(expected_exception);
         }
         [TestMethod]
         public void ExceptionRaisedWhoCaresViaContext()
@@ -201,9 +193,9 @@ namespace Commonality.Test
             }
         }
 
-        public void Throw(string code, Exception ex)
+        public void Throw(Exception ex)
         {
-            SetError(code, ex);
+            SetError(ex);
         }
     }
 
@@ -211,6 +203,21 @@ namespace Commonality.Test
     {
         public string actual_code = null;
         public Exception actual_exception = null;
+
+        public void LogError(Exception ex)
+        {
+            actual_exception = ex;
+        }
+
+        public Task LogErrorAsync(Exception ex)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task LogInfoAsync(string message)
+        {
+            throw new NotImplementedException();
+        }
 
         void ILogger.Error(string key, Exception ex)
         {
