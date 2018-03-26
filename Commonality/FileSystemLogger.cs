@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -18,45 +19,32 @@ namespace Commonality
         /// Constructor
         /// </summary>
         /// <param name="homedir">Directory where on the filesystem to store the logs</param>
-        public FileSystemLogger(string homedir = null)
+        public FileSystemLogger(string homedir = ""):
+            this(new LoggerFileSystem(homedir))
         {
-#if IO_ABSTRACTRIONS
-            MyFileSystem = new FileSystem();
-#endif
-            if (!string.IsNullOrEmpty(homedir))
-                HomeDirectory = homedir;
         }
 
-#if IO_ABSTRACTRIONS
         /// <summary>
         /// Constructor, with an IFileSystem for testing
         /// </summary>
-        /// <param name="homedir">Directory where on the filesystem to store the logs</param>
-        public FileSystemLogger(IFileSystem fileSystem)
+        public FileSystemLogger(ILoggerFileSystem fileSystem)
         {
-            MyFileSystem = fileSystem;
-            try
-            {
-                HomeDirectory = MyFileSystem.Directory.GetCurrentDirectory();
-            }
-            catch
-            {
-                // Ignore filesystem errors
-            }
+            FileSystem = fileSystem;
         }
-#endif
 
         /// <summary>
         /// Report an exception
         /// </summary>
         /// <param name="key">Unique key to identify where in the app the exception was thrown</param>
         /// <param name="ex">Exception to report</param>
+        [Obsolete("Error is deprecated, please use LogError instead, with the code in ex.Source")]
         public void Error(string key, Exception ex)
         {
             ExternalSemaphore.Wait();
             var ignore = ErrorAsync(key,ex);
         }
 
+        [Obsolete("ErrorAsync is deprecated, please use LogErrorAsync instead, with the code in ex.Source")]
         public async Task ErrorAsync(string key, Exception ex)
         {
             var list = new List<string>();
@@ -183,52 +171,26 @@ namespace Commonality
             ExternalSemaphore.Release();
         }
 
-#pragma warning disable 1998
         /// <summary>
         /// Retrieve listing of all the log files
         /// </summary>
         /// <returns>List of all the log files</returns>
-        public static async Task<IEnumerable<string>> GetLogs()
+        public static IEnumerable<DateTime> GetLogs()
         {
-            string[] files;
-            files = MyFileSystem.Directory.GetFiles(HomeDirectory + "Logs");
-
-            var select = files.Select(x => MyFileSystem.Path.GetFileName(x));
-            return select;
+            return FileSystem.Directory();
         }
 
         /// <summary>
         /// Get a single log for reading
         /// </summary>
-        /// <remarks>
-        /// It's cumpersonme and suboptimal to take a datetime here but return a filename in
-        /// GetLogs. This should be improved. See example below for how to convert.
-        /// </remarks>
         /// <param name="dt">Datetime which corresponds to a filename returned from GetLogs</param>
-        /// <example>
-        /// var logs = FileSystemLogger.GetLogs();
-        /// var log = logs[0];
-        /// var text = log.Split('.')[0];
-        /// long binary = Convert.ToInt64(text, 16);
-        /// DateTime dt = DateTime.FromBinary(binary);
-        /// var stream = FileSystemLogger.OpenLogForRead(dt);
-        /// </example>
         /// <returns>Stream to read a single log file</returns>
-        public static async Task<Stream> OpenLogForRead(DateTime dt)
+        public static Stream OpenLogForRead(DateTime dt)
         {
-            var path = HomeDirectory + "Logs/" + dt.ToBinary().ToString("x") + ".txt";
-
-            // QUIRKS
-            path = path.Replace('/', '\\');
-            
-            return MyFileSystem.File.OpenRead(path);
+            return FileSystem.OpenForRead(dt);
         }
-#pragma warning restore 1998
 
-        /// <summary>
-        /// Filename of the session log file
-        /// </summary>
-        private string SessionFilename;
+        private DateTime? SessionId;
 
         /// <summary>
         /// Semaphore used to control access to the logs. Only one thread can write to logs at once!
@@ -250,62 +212,15 @@ namespace Commonality
         {
             await Semaphore.WaitAsync();
 
-            if (SessionFilename == null)
+            if (!SessionId.HasValue)
             {
-                SessionFilename = "Logs/" + Time.ToBinary().ToString("x") + ".txt";
-
-                try
-                {
-                    var path = HomeDirectory + SessionFilename;
-                    var dir = MyFileSystem.Path.GetDirectoryName(path);
-                    if (!string.IsNullOrEmpty(dir))
-                        MyFileSystem.Directory.CreateDirectory(dir);
-
-                    // QUIRKS
-                    path = path.Replace('/', '\\');
-
-                    using (var stream = MyFileSystem.File.Create(path))
-                    {
-                        var sw = new StreamWriter(stream);
-                        await sw.WriteLineAsync(Time.ToString("u") + " Created");
-                        await sw.FlushAsync();
-                    }
-
-                }
-                catch
-                {
-                    // We're too deep here to do anything good with exceptions now
-                }
-
+                SessionId = Time;
+                await FileSystem.Create(SessionId.Value, FormattedLine("Created"));
             }
 
-            try
-            {
-                var path = HomeDirectory + SessionFilename;
-                var dir = MyFileSystem.Path.GetDirectoryName(path);
-                if (!string.IsNullOrEmpty(dir))
-                    MyFileSystem.Directory.CreateDirectory(dir);
+            await FileSystem.Append(SessionId.Value, lines.Select(x=> FormattedLine(x)));
 
-                // QUIRKS
-                path = path.Replace('/', '\\');
-
-                using (var sw = MyFileSystem.File.AppendText(path))
-                {
-                    foreach (var line in lines)
-                        await sw.WriteLineAsync(FormattedLine(line));
-                    await sw.FlushAsync();
-                }
-
-            }
-            catch (Exception)
-            {
-                // All we can do is swallow exceptions here. We are deep INSIDE our exception
-                // logging mechanism!
-            }
-            finally
-            {
-                Semaphore.Release();
-            }
+            Semaphore.Release();
         }
 
         /// <summary>
@@ -326,16 +241,110 @@ namespace Commonality
         protected DateTime Time => Service.TryGet<IClock>()?.Now ?? DateTime.Now;
 
         /// <summary>
-        /// THe location on the filesystem where logs are to be written
-        /// </summary>
-        private static string HomeDirectory = string.Empty;
-
-#if IO_ABSTRACTRIONS
-        /// <summary>
         /// Which filesystem we are using. This can be overriden for testing
         /// </summary>
-        private static IFileSystem MyFileSystem;
-#endif
+        private static ILoggerFileSystem FileSystem;
+    }
 
+    /// <summary>
+    /// Describes the encapsulated filesystem interaction used by the FileSystemLogger
+    /// </summary>
+    public interface ILoggerFileSystem
+    {
+        Task Create(DateTime dt, string line);
+        Task Append(DateTime dt, IEnumerable<string> lines);
+        Stream OpenForRead(DateTime dt);
+        IEnumerable<DateTime> Directory();
+    }
+
+    /// <summary>
+    /// Implements the minimum needed filesystem interaction used by the FileSystem Logger
+    /// </summary>
+    //[ExcludeFromCodeCoverage]
+    class LoggerFileSystem : ILoggerFileSystem
+    {
+        private string HomeDirectory;
+
+        public LoggerFileSystem(string _HomeDirectory = "")
+        {
+            HomeDirectory = _HomeDirectory;
+        }
+
+        public async Task Append(DateTime dt, IEnumerable<string> lines)
+        {
+            try
+            {
+                var SessionFilename = "Logs/" + dt.ToBinary().ToString("x") + ".txt";
+
+                var path = HomeDirectory + SessionFilename;
+                var dir = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(dir))
+                    MyFileSystem.Directory.CreateDirectory(dir);
+
+                using (var sw = File.AppendText(path))
+                {
+                    foreach (var line in lines)
+                        await sw.WriteLineAsync(line);
+                    await sw.FlushAsync();
+                }
+
+            }
+            catch (Exception)
+            {
+                // All we can do is swallow exceptions here. We are deep INSIDE our exception
+                // logging mechanism!
+            }
+        }
+
+        public async Task Create(DateTime dt, string line)
+        {
+            var SessionFilename = "Logs/" + dt.ToBinary().ToString("x") + ".txt";
+
+            try
+            {
+                var path = HomeDirectory + SessionFilename;
+                var dir = Path.GetDirectoryName(path);
+                if (!string.IsNullOrEmpty(dir))
+                    MyFileSystem.Directory.CreateDirectory(dir);
+
+                using (var stream = File.Create(path))
+                {
+                    var sw = new StreamWriter(stream);
+                    await sw.WriteLineAsync(line);
+                    await sw.FlushAsync();
+                }
+
+            }
+            catch
+            {
+                // We're too deep here to do anything good with exceptions now
+            }
+        }
+
+        public IEnumerable<DateTime> Directory()
+        {
+            string[] files;
+            files = MyFileSystem.Directory.GetFiles(HomeDirectory + "Logs");
+
+            var select = files.Select(TransformFileName);
+
+            return select;
+        }
+
+        private DateTime TransformFileName(string arg)
+        {
+            var log = Path.GetFileName(arg);
+            var text = log.Split('.')[0];
+            long binary = Convert.ToInt64(text, 16);
+            DateTime dt = DateTime.FromBinary(binary);
+
+            return dt;
+        }
+
+        public Stream OpenForRead(DateTime dt)
+        {
+            var path = HomeDirectory + "Logs/" + dt.ToBinary().ToString("x") + ".txt";
+            return File.OpenRead(path);
+        }
     }
 }
