@@ -185,9 +185,21 @@ namespace Commonality
         /// </summary>
         /// <param name="dt">Datetime which corresponds to a filename returned from GetLogs</param>
         /// <returns>Stream to read a single log file</returns>
-        public static Stream OpenLogForRead(DateTime dt)
+        public static async Task<IEnumerable<string>> ReadContents(DateTime dt)
         {
-            return FileSystem.OpenForRead(dt);
+            IEnumerable<string> result = null;
+
+            try
+            {
+                await Semaphore.WaitAsync();
+                result = await FileSystem.ReadContents(dt);
+            }
+            finally
+            {
+                Semaphore.Release();
+            }
+
+            return result;
         }
 
         private DateTime? SessionId;
@@ -195,7 +207,7 @@ namespace Commonality
         /// <summary>
         /// Semaphore used to control access to the logs. Only one thread can write to logs at once!
         /// </summary>
-        private SemaphoreSlim Semaphore = new SemaphoreSlim(1);
+        private static SemaphoreSlim Semaphore = new SemaphoreSlim(1);
 
         /// <summary>
         /// Semaphore used to control access to syncrhonous loggers. In case you want to 'await'
@@ -210,17 +222,22 @@ namespace Commonality
         /// <returns>Awaitable task</returns>
         private async Task Log(IEnumerable<string> lines)
         {
-            await Semaphore.WaitAsync();
-
-            if (!SessionId.HasValue)
+            try
             {
-                SessionId = Time;
-                await FileSystem.Create(SessionId.Value, FormattedLine("Created"));
+                await Semaphore.WaitAsync();
+
+                if (!SessionId.HasValue)
+                {
+                    SessionId = Time;
+                    await FileSystem.Create(SessionId.Value, FormattedLine("Created"));
+                }
+
+                await FileSystem.Append(SessionId.Value, lines.Select(x => FormattedLine(x)));
             }
-
-            await FileSystem.Append(SessionId.Value, lines.Select(x=> FormattedLine(x)));
-
-            Semaphore.Release();
+            finally
+            {
+                Semaphore.Release();
+            }
         }
 
         /// <summary>
@@ -253,7 +270,7 @@ namespace Commonality
     {
         Task Create(DateTime dt, string line);
         Task Append(DateTime dt, IEnumerable<string> lines);
-        Stream OpenForRead(DateTime dt);
+        Task<IEnumerable<string>> ReadContents(DateTime dt);
         IEnumerable<DateTime> Directory();
     }
 
@@ -341,10 +358,22 @@ namespace Commonality
             return dt;
         }
 
-        public Stream OpenForRead(DateTime dt)
+        public async Task<IEnumerable<string>> ReadContents(DateTime dt)
         {
+            List<string> result = new List<string>();
+
             var path = HomeDirectory + "Logs/" + dt.ToBinary().ToString("x") + ".txt";
-            return File.OpenRead(path);
+            using (var stream = File.OpenRead(path))
+            {
+                var reader = new StreamReader(stream);
+                while (!reader.EndOfStream)
+                {
+                    var line = await reader.ReadLineAsync();
+                    result.Add(line);
+                }
+            }
+
+            return result;
         }
     }
 }
