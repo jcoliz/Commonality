@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -112,6 +113,7 @@ namespace Commonality
         /// <param name="parameters">Additional parameters, usually 'key=value'</param>
         public void LogEvent(string message, params string[] parameters)
         {
+            Debug.WriteLine($"LogEvent {message}");
             ExternalSemaphore.Wait();
             var ignore = LogEventAsync(message,parameters);
         }
@@ -124,6 +126,7 @@ namespace Commonality
         /// <returns>Awaitable task</returns>
         public async Task LogEventAsync(string message, params string[] parameters)
         {
+            Debug.WriteLine($"LogEventAsync {message}");
             var list = new List<string>(parameters.Select(x=>$", {x}"));
             list.Insert(0, $"Event: {message}");
             await Log(list);
