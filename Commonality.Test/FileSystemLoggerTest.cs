@@ -23,19 +23,8 @@ namespace Commonality.Test
 
         private async Task<List<string>> ReadLog()
         {
-            var lines = new List<string>();
-
-            using (var stream = FileSystemLogger.OpenLogForRead(Clock.Now))
-            {
-                var sw = new StreamReader(stream);
-                while (!sw.EndOfStream)
-                {
-                    var line = await sw.ReadLineAsync();
-                    lines.Add(line);
-                }
-            }
-
-            return lines;
+            var lines = await FileSystemLogger.ReadContents(Clock.Now);
+            return lines.ToList();
         }
 
         [TestInitialize]
@@ -86,17 +75,6 @@ namespace Commonality.Test
             Assert.IsTrue(lines[0].Contains("Created"));
             Assert.IsTrue(lines[1].Contains("Started"));
         }
-
-        //[TestMethod]
-        public async Task StartSessionAndReadNoFilesystem()
-        {
-            // The purpose of this is to inject filesystem exceptions, and make sure we 
-            // recover cleanly and don't propagate exceptions out
-
-           // Logger = new FileSystemLogger(new BogusFileSystem());
-           // await Logger.StartSession();
-        }
-
 
         [TestMethod]
         public async Task LogEventAndRead()
@@ -304,15 +282,9 @@ namespace Commonality.Test
             return LogEntries.Keys;
         }
 
-        public Stream OpenForRead(DateTime dt)
+        public async Task<IEnumerable<string>> ReadContents(DateTime dt)
         {
-            var builder = new StringBuilder();
-            foreach (var line in LogEntries[dt])
-                builder.AppendLine(line);
-
-            var file = Encoding.ASCII.GetBytes(builder.ToString());
-
-            return new MemoryStream(file);
+            return LogEntries[dt];
         }
     }
 }
