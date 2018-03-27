@@ -1,12 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using MyFileSystem = System.IO;
 
 namespace Commonality
 {
@@ -16,8 +14,9 @@ namespace Commonality
 
     public class FileSystemLogger: ILogger
     {
+        #region Constructors
         /// <summary>
-        /// Constructor
+        /// Default Constructor
         /// </summary>
         /// <param name="homedir">Directory where on the filesystem to store the logs</param>
         public FileSystemLogger(string homedir = ""):
@@ -32,6 +31,16 @@ namespace Commonality
         {
             FileSystem = fileSystem;
         }
+        #endregion
+
+        #region Public Interface (ILogger)
+        /// <summary>
+        /// Begin the logging session. Call the once when the app starts
+        /// </summary>
+        public async Task StartSession()
+        {
+            await Log(new[] { "Started" });
+        }
 
         /// <summary>
         /// Report an exception
@@ -45,6 +54,11 @@ namespace Commonality
             var ignore = ErrorAsync(key,ex);
         }
 
+        /// <summary>
+        /// Report an exception asynchronously
+        /// </summary>
+        /// <param name="key">Unique key to identify where in the app the exception was thrown</param>
+        /// <param name="ex">Exception to report</param>
         [Obsolete("ErrorAsync is deprecated, please use LogErrorAsync instead, with the code in ex.Source")]
         public async Task ErrorAsync(string key, Exception ex)
         {
@@ -145,6 +159,10 @@ namespace Commonality
             var ignore = LogInfoAsync(message);
         }
 
+        /// <summary>
+        /// Log an informative message, asynchronously
+        /// </summary>
+        /// <param name="message">Descriptive message of what's goig on. Usually detailed</param>
         public async Task LogInfoAsync(string message)
         {
             await Log(new[] { $"FYI: {message}" });
@@ -153,13 +171,9 @@ namespace Commonality
                 ExternalSemaphore.Release();
         }
 
-        /// <summary>
-        /// Begin the logging session. Call the once when the app starts
-        /// </summary>
-        public async Task StartSession()
-        {
-            await Log(new[] { "Started" });
-        }
+        #endregion
+
+        #region Additional public interface
 
         /// <summary>
         /// Await until the current log has written
@@ -205,19 +219,9 @@ namespace Commonality
             return result;
         }
 
-        private DateTime? SessionId;
+        #endregion
 
-        /// <summary>
-        /// Semaphore used to control access to the logs. Only one thread can write to logs at once!
-        /// </summary>
-        private static SemaphoreSlim Semaphore = new SemaphoreSlim(1);
-
-        /// <summary>
-        /// Semaphore used to control access to syncrhonous loggers. In case you want to 'await'
-        /// a synchronous logging method
-        /// </summary>
-        private SemaphoreSlim ExternalSemaphore = new SemaphoreSlim(1);
-
+        #region Internal Methods
         /// <summary>
         /// Internal method to actually write to the logs
         /// </summary>
@@ -242,6 +246,30 @@ namespace Commonality
                 Semaphore.Release();
             }
         }
+        #endregion
+
+        #region Internal Properties
+
+        /// <summary>
+        /// Identifier for which logging session we are currently logging into
+        /// </summary>
+        private DateTime? SessionId;
+
+        /// <summary>
+        /// Semaphore used to control access to the logs. Only one thread can write to logs at once!
+        /// </summary>
+        private static SemaphoreSlim Semaphore = new SemaphoreSlim(1);
+
+        /// <summary>
+        /// Semaphore used to control access to syncrhonous loggers. In case you want to 'await'
+        /// a synchronous logging method
+        /// </summary>
+        private SemaphoreSlim ExternalSemaphore = new SemaphoreSlim(1);
+
+        /// <summary>
+        /// Which filesystem we are using. This can be overriden for testing
+        /// </summary>
+        private static ILoggerFileSystem FileSystem;
 
         /// <summary>
         /// Format the given line into what it should look like when it actually goes into
@@ -259,11 +287,7 @@ namespace Commonality
         /// system time.
         /// </summary>
         protected DateTime Time => Service.TryGet<IClock>()?.Now ?? DateTime.Now;
-
-        /// <summary>
-        /// Which filesystem we are using. This can be overriden for testing
-        /// </summary>
-        private static ILoggerFileSystem FileSystem;
+        #endregion
     }
 
     /// <summary>
@@ -280,6 +304,10 @@ namespace Commonality
     /// <summary>
     /// Implements the minimum needed filesystem interaction used by the FileSystem Logger
     /// </summary>
+    /// <remarks>
+    /// Encapsulating all the filesystem access makes it easier to test. Also seems to clean
+    /// up the logger itself
+    /// </remarks>
     //[ExcludeFromCodeCoverage]
     class LoggerFileSystem : ILoggerFileSystem
     {
@@ -299,7 +327,7 @@ namespace Commonality
                 var path = HomeDirectory + SessionFilename;
                 var dir = Path.GetDirectoryName(path);
                 if (!string.IsNullOrEmpty(dir))
-                    MyFileSystem.Directory.CreateDirectory(dir);
+                    System.IO.Directory.CreateDirectory(dir);
 
                 using (var sw = File.AppendText(path))
                 {
@@ -316,6 +344,12 @@ namespace Commonality
             }
         }
 
+        /// <summary>
+        /// Create a new logging session, and add this line
+        /// </summary>
+        /// <param name="dt">Session identifier</param>
+        /// <param name="line">Logging text line</param>
+        /// <returns></returns>
         public async Task Create(DateTime dt, string line)
         {
             var SessionFilename = "Logs/" + dt.ToBinary().ToString("x") + ".txt";
@@ -325,7 +359,7 @@ namespace Commonality
                 var path = HomeDirectory + SessionFilename;
                 var dir = Path.GetDirectoryName(path);
                 if (!string.IsNullOrEmpty(dir))
-                    MyFileSystem.Directory.CreateDirectory(dir);
+                    System.IO.Directory.CreateDirectory(dir);
 
                 using (var stream = File.Create(path))
                 {
@@ -341,15 +375,25 @@ namespace Commonality
             }
         }
 
+        /// <summary>
+        /// Enumerate all the available logging sessions
+        /// </summary>
+        /// <returns>List of all logging sessions</returns>
         public IEnumerable<DateTime> Directory()
         {
             string[] files;
-            files = MyFileSystem.Directory.GetFiles(HomeDirectory + "Logs");
+            files = System.IO.Directory.GetFiles(HomeDirectory + "Logs");
 
             var select = files.Select(TransformFileName);
 
             return select;
         }
+
+        /// <summary>
+        /// Turn a filename into a session id
+        /// </summary>
+        /// <param name="arg"></param>
+        /// <returns></returns>
 
         private DateTime TransformFileName(string arg)
         {
@@ -361,6 +405,11 @@ namespace Commonality
             return dt;
         }
 
+        /// <summary>
+        /// Read the entire contents of a logging session
+        /// </summary>
+        /// <param name="dt">Session id</param>
+        /// <returns>All logging lines in that session</returns>
         public async Task<IEnumerable<string>> ReadContents(DateTime dt)
         {
             List<string> result = new List<string>();
