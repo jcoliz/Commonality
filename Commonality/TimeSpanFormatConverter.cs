@@ -7,6 +7,8 @@ namespace Commonality.Converters
     /// </summary>
     public class TimeSpanFormatConverter : IBaseValueConverter
     {
+        public static readonly string Empty = "---";
+
         /// <summary>
         /// Convert value to a string using a standard format
         /// </summary>
@@ -28,7 +30,7 @@ namespace Commonality.Converters
 
             TimeSpan? input = value as TimeSpan?;
 
-            String result = "---";
+            String result = Empty;
             if (input.HasValue)
             {
                 if (format != null)
@@ -39,6 +41,9 @@ namespace Commonality.Converters
             return result;
         }
 
+        /// <summary>
+        /// Convert back not implemented
+        /// </summary>
         public object ConvertBack(object value, Type targetType, object parameter)
         {
             throw new NotImplementedException();

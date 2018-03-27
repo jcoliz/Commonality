@@ -21,7 +21,7 @@ namespace Commonality.Converters
     /// 
     /// public class DateFormatConverterXaml : XamlValueConverter<DateFormatConverter> {}
     /// </example>
-public interface IBaseValueConverter
+    public interface IBaseValueConverter
     {
         object Convert(object value, Type targetType, object parameter);
 

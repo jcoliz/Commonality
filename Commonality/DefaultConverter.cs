@@ -19,15 +19,8 @@ namespace Commonality.Converters
     public abstract class DefaultConverter : IBaseValueConverter
     {
         /// <summary>
-        /// 
+        /// Convert any type to one of two options, yes or no. Returns yes if value is default, or no if it's not
         /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <param name="yes"></param>
-        /// <param name="no"></param>
-        /// <param name="value"></param>
-        /// <param name="targetType"></param>
-        /// <param name="parameter"></param>
-        /// <returns></returns>
         protected T Convert<T>(T yes, T no, object value, Type targetType, object parameter)
         {
             if (typeof(T) != targetType)
@@ -67,6 +60,9 @@ namespace Commonality.Converters
 
         public abstract object Convert(object value, Type targetType, object parameter);
 
+        /// <summary>
+        /// Convert back not implemented
+        /// </summary>
         public object ConvertBack(object value, Type targetType, object parameter)
         {
             throw new NotImplementedException();

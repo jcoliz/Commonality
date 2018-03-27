@@ -8,6 +8,8 @@ namespace Commonality.Converters
     /// </summary>
     public class DateFormatConverter : IBaseValueConverter
     {
+        public static readonly string Empty = "---";
+
         /// <summary>
         /// Convert value to a string using a standard format
         /// </summary>
@@ -28,7 +30,7 @@ namespace Commonality.Converters
 
             DateTime? input = value as DateTime?;
 
-            String result = "---";
+            String result = Empty;
             if (input.HasValue)
             {
                 if (format != null)

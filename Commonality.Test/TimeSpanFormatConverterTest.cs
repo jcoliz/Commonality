@@ -38,7 +38,7 @@ namespace Commonality.Test
         {
             var actual = Converter.Convert(null, typeof(string), null);
 
-            var expected = "---";
+            var expected = TimeSpanFormatConverter.Empty;
 
             Assert.AreEqual(expected, actual);
         }
