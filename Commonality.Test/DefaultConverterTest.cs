@@ -9,7 +9,7 @@ namespace Commonality.Test
     [TestClass]
     public class DefaultConverterTest
     {
-        private DefaultConverter Converter;
+        private DefaultToStringConverter Converter;
 
         [TestInitialize]
         public void SetUp()
@@ -109,15 +109,14 @@ namespace Commonality.Test
         }
     }
 
-    class DefaultToStringConverter : DefaultConverter
+    class DefaultToStringConverter : DefaultConverter<string>
     {
-        public static string True = "True";
-        public static string False = "False";
+        public static readonly string True = "True";
+        public static readonly string False = "False";
 
-        public override object Convert(object value, Type targetType, object parameter)
+        public DefaultToStringConverter(): base(False,True)
         {
 
-            return base.Convert<string>(False,True,value,targetType,parameter);
         }
     }
 }

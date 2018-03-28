@@ -16,12 +16,18 @@ namespace Commonality.Converters
     ///         => base.Convert<Visibility>(Visibility.Collapsed, Visibility.Visible, value, targetType, parameter);
     /// }
     /// </example>
-    public abstract class DefaultConverter : IBaseValueConverter
+    public abstract class DefaultConverter<T> : IBaseValueConverter
     {
-        /// <summary>
-        /// Convert any type to one of two options, yes or no. Returns yes if value is default, or no if it's not
-        /// </summary>
-        protected T Convert<T>(T yes, T no, object value, Type targetType, object parameter)
+        private T YesValue;
+        private T NoValue;
+
+        protected DefaultConverter(T yes, T no)
+        {
+            YesValue = yes;
+            NoValue = no;
+        }
+
+        public object Convert(object value, Type targetType, object parameter)
         {
             if (typeof(T) != targetType)
             {
@@ -55,10 +61,8 @@ namespace Commonality.Converters
                 isdefault = value == null;
             }
 
-            return isdefault ^ invert ? yes : no;
+            return isdefault ^ invert ? YesValue : NoValue;
         }
-
-        public abstract object Convert(object value, Type targetType, object parameter);
 
         /// <summary>
         /// Convert back not implemented
