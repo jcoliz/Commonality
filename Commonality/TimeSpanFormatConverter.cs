@@ -28,15 +28,15 @@ namespace Commonality.Converters
             if (parameter != null && (String)parameter != null)
                 format = ((String)parameter).Replace(":", "\\:");
 
-            TimeSpan? input = value as TimeSpan?;
+            TimeSpan? ts = value as TimeSpan?;
 
             String result = Empty;
-            if (input.HasValue)
+            if (ts.HasValue)
             {
                 if (format != null)
-                    result = input.Value.ToString(format);
+                    result = ts.Value.ToString(format);
                 else
-                    result = input.Value.ToString();
+                    result = ts.Value.ToString();
             }
             return result;
         }

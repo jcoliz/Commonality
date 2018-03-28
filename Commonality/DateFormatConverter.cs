@@ -28,15 +28,15 @@ namespace Commonality.Converters
             if (parameter != null && (String)parameter != null)
                 format = (String)parameter;
 
-            DateTime? input = value as DateTime?;
+            DateTime? dt = value as DateTime?;
 
             String result = Empty;
-            if (input.HasValue)
+            if (dt.HasValue)
             {
                 if (format != null)
-                    result = input.Value.ToString(format);
+                    result = dt.Value.ToString(format);
                 else
-                    result = input.Value.ToString();
+                    result = dt.Value.ToString();
             }
 
             return result;
