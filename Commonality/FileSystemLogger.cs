@@ -60,14 +60,18 @@ namespace Commonality
         /// <param name="key">Unique key to identify where in the app the exception was thrown</param>
         /// <param name="ex">Exception to report</param>
         [Obsolete("ErrorAsync is deprecated, please use LogErrorAsync instead, with the code in ex.Source")]
-        public async Task ErrorAsync(string key, Exception ex)
+        public async Task ErrorAsync(string key, Exception ex) => await ErrorAsyncInternal(key, ex);
+
+        private async Task ErrorAsyncInternal(string key, Exception ex)
         {
             var list = new List<string>();
 
-            list.Add($"Error: {key}/{ex.GetType().ToString()}");
+            string showkey = key ?? ex.Source;
+
+            list.Add($"Error: {showkey}/{ex.GetType().ToString()}");
             if ( ! string.IsNullOrEmpty( ex.StackTrace ) )
                 list.Add($", Stack = {ex.StackTrace}");
-            if ( ! string.IsNullOrEmpty(ex.Source) )
+            if ( ! string.IsNullOrEmpty(ex.Source) && !string.IsNullOrEmpty(key))
                 list.Add($", Source = {ex.Source}");
             Exception e = ex;
             while (e != null)
@@ -101,24 +105,7 @@ namespace Commonality
         /// Expects a short tag in ex.Source, which some backend services will use for aggregation
         /// </remarks>
         /// <param name="ex">Exception to report</param>
-        public async Task LogErrorAsync(Exception ex)
-        {
-            var list = new List<string>();
-
-            list.Add($"Error: {ex.Source}/{ex.GetType().ToString()}");
-            if (!string.IsNullOrEmpty(ex.StackTrace))
-                list.Add($", Stack = {ex.StackTrace}");
-            Exception e = ex;
-            while (e != null)
-            {
-                list.Add($", Message = {e.GetType().ToString()} {e.Message}");
-                e = e.InnerException;
-            }
-            await Log(list);
-
-            if (ExternalSemaphore.CurrentCount == 0)
-                ExternalSemaphore.Release();
-        }
+        public async Task LogErrorAsync(Exception ex) => await ErrorAsyncInternal(null, ex);
 
         /// <summary>
         /// Log an event immediately
