@@ -12,7 +12,7 @@ namespace Commonality
     /// This is needed to avoid the notification for every single element
     /// </remarks>
     /// <typeparam name="T">Type of object to be collected</typeparam>
-    public class RangeObservableCollection<T> : ObservableCollection<T>
+    public class RangeObservableCollection<T> : ObservableCollection<T>, IObservableCollection<T>
     {
         /// <summary>
         /// Add a range of items to the collectiom
