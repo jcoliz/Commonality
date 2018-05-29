@@ -11,6 +11,10 @@ namespace Commonality
     /// <summary>
     /// This is a simple logger which just logs to the local file system. No cloud analytics here.
     /// </summary>
+    /// <remarks>
+    /// Service Dependencies:
+    ///     * IClock
+    /// </remarks>
 
     public class FileSystemLogger: ILogger
     {

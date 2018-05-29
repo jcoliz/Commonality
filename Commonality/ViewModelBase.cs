@@ -7,6 +7,10 @@ namespace Commonality
     /// <summary>
     /// Provides some basic common functionality that all ViewModels want, including INotifyPropertyChanged handling, and message/error propagation to the UI
     /// </summary>
+    /// <remarks>
+    /// Service Dependencies:
+    ///     * ILogger
+    /// </remarks>
     public class ViewModelBase : INotifyPropertyChanged
     {
         /// <summary>

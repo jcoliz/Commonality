@@ -9,6 +9,9 @@ namespace Commonality
     /// </summary>
     /// <remarks>
     /// This is helpful both for testing, and for a system where we use an external clock
+    /// 
+    /// Service Dependencies:
+    ///     * ILogger
     /// </remarks>
     public class Clock : IClock
     {
