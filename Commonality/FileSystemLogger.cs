@@ -50,7 +50,6 @@ namespace Commonality
         [Obsolete("Error is deprecated, please use LogError instead, with the code in ex.Source")]
         public void Error(string key, Exception ex)
         {
-            ExternalSemaphore.Wait();
             var ignore = ErrorAsync(key,ex);
         }
 
@@ -80,9 +79,6 @@ namespace Commonality
                 e = e.InnerException;
             }
             await Log(list);
-
-            if (ExternalSemaphore.CurrentCount == 0)
-                ExternalSemaphore.Release();
         }
 
         /// <summary>
@@ -94,7 +90,6 @@ namespace Commonality
         /// <param name="ex">Exception to report</param>
         public void LogError(Exception ex)
         {
-            ExternalSemaphore.Wait();
             var ignore = LogErrorAsync(ex);
         }
 
@@ -115,7 +110,6 @@ namespace Commonality
         public void LogEvent(string message, params string[] parameters)
         {
             Debug.WriteLine($"LogEvent {message}");
-            ExternalSemaphore.Wait();
             var ignore = LogEventAsync(message,parameters);
         }
 
@@ -131,9 +125,6 @@ namespace Commonality
             var list = new List<string>(parameters.Select(x=>$", {x}"));
             list.Insert(0, $"Event: {message}");
             await Log(list);
-
-            if (ExternalSemaphore.CurrentCount == 0)
-                ExternalSemaphore.Release();
         }
 
         /// <summary>
@@ -142,7 +133,6 @@ namespace Commonality
         /// <param name="message">Descriptive message of what's goig on. Usually detailed</param>
         public void LogInfo(string message)
         {
-            ExternalSemaphore.Wait();
             var ignore = LogInfoAsync(message);
         }
 
@@ -153,9 +143,6 @@ namespace Commonality
         public async Task LogInfoAsync(string message)
         {
             await Log(new[] { $"FYI: {message}" });
-
-            if (ExternalSemaphore.CurrentCount == 0)
-                ExternalSemaphore.Release();
         }
 
         #endregion
@@ -169,11 +156,6 @@ namespace Commonality
         /// Useful for unit testing the non-async methods
         /// </remarks>
         /// <returns></returns>
-        public async Task Wait()
-        {
-            await ExternalSemaphore.WaitAsync();
-            ExternalSemaphore.Release();
-        }
 
         /// <summary>
         /// Retrieve listing of all the log files
@@ -246,12 +228,6 @@ namespace Commonality
         /// Semaphore used to control access to the logs. Only one thread can write to logs at once!
         /// </summary>
         private static SemaphoreSlim Semaphore = new SemaphoreSlim(1);
-
-        /// <summary>
-        /// Semaphore used to control access to syncrhonous loggers. In case you want to 'await'
-        /// a synchronous logging method
-        /// </summary>
-        private SemaphoreSlim ExternalSemaphore = new SemaphoreSlim(1);
 
         /// <summary>
         /// Which filesystem we are using. This can be overriden for testing
