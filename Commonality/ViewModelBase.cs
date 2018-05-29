@@ -64,7 +64,7 @@ namespace Commonality
                 else
                     ExceptionRaised?.Invoke(this, ex);
 
-                Service.TryGet<ILogger>()?.LogError(ex);
+                Logger?.LogError(ex);
             }
             catch (Exception)
             {
@@ -126,5 +126,9 @@ namespace Commonality
                 // what just happened, so we are going to (reluctantly) swallow this.
             }
         }
+
+        #region Service Locator services
+        private ILogger Logger => Service.TryGet<ILogger>();
+        #endregion
     }
 }
