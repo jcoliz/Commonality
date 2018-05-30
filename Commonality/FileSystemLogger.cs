@@ -23,16 +23,17 @@ namespace Commonality
         /// Default Constructor
         /// </summary>
         /// <param name="homedir">Directory where on the filesystem to store the logs</param>
-        public FileSystemLogger(string homedir = ""):
-            this(new LoggerFileSystem(homedir))
+        public FileSystemLogger(IClock clock, string homedir = ""):
+            this(clock, new LoggerFileSystem(homedir))
         {
         }
 
         /// <summary>
         /// Constructor, with an IFileSystem for testing
         /// </summary>
-        public FileSystemLogger(ILoggerFileSystem fileSystem)
+        public FileSystemLogger(IClock clock, ILoggerFileSystem fileSystem)
         {
+            Clock = clock;
             FileSystem = fileSystem;
         }
         #endregion
@@ -256,7 +257,7 @@ namespace Commonality
         protected DateTime Time => Clock?.Now ?? DateTime.Now;
         #endregion
 
-        private IClock Clock => Service.TryGet<IClock>();
+        private IClock Clock;
     }
 
     /// <summary>
