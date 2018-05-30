@@ -42,36 +42,19 @@ namespace Commonality
         /// <summary>
         /// Begin the logging session. Call the once when the app starts
         /// </summary>
-        public async Task StartSession()
+        public async Task StartSessionAsync()
         {
             await Log(new[] { "Started" });
         }
 
-        /// <summary>
-        /// Report an exception
-        /// </summary>
-        /// <param name="key">Unique key to identify where in the app the exception was thrown</param>
-        /// <param name="ex">Exception to report</param>
-        [Obsolete("Error is deprecated, please use LogError instead, with the code in ex.Source")]
-        public void Error(string key, Exception ex)
-        {
-            var ignore = ErrorAsync(key,ex);
-        }
-
-        /// <summary>
-        /// Report an exception asynchronously
-        /// </summary>
-        /// <param name="key">Unique key to identify where in the app the exception was thrown</param>
-        /// <param name="ex">Exception to report</param>
-        [Obsolete("ErrorAsync is deprecated, please use LogErrorAsync instead, with the code in ex.Source")]
-        public async Task ErrorAsync(string key, Exception ex) => await ErrorAsyncInternal(key, ex);
-
         private async Task ErrorAsyncInternal(string key, Exception ex)
         {
+
             var list = new List<string>();
 
             string showkey = key ?? ex.Source;
 
+            Debug.WriteLine($"LogErrorAsync {showkey}/{ex.GetType().ToString()}");
             list.Add($"Error: {showkey}/{ex.GetType().ToString()}");
             if ( ! string.IsNullOrEmpty( ex.StackTrace ) )
                 list.Add($", Stack = {ex.StackTrace}");
@@ -87,18 +70,6 @@ namespace Commonality
         }
 
         /// <summary>
-        /// Report an exception
-        /// </summary>
-        /// <remarks>
-        /// Expects a short tag in ex.Source, which some backend services will use for aggregation
-        /// </remarks>
-        /// <param name="ex">Exception to report</param>
-        public void LogError(Exception ex)
-        {
-            var ignore = LogErrorAsync(ex);
-        }
-
-        /// <summary>
         /// Report an exception asynchronously
         /// </summary>
         /// <remarks>
@@ -106,17 +77,6 @@ namespace Commonality
         /// </remarks>
         /// <param name="ex">Exception to report</param>
         public async Task LogErrorAsync(Exception ex) => await ErrorAsyncInternal(null, ex);
-
-        /// <summary>
-        /// Log an event immediately
-        /// </summary>
-        /// <param name="message">Descriptive message of what's goig on. Usually short</param>
-        /// <param name="parameters">Additional parameters, usually 'key=value'</param>
-        public void LogEvent(string message, params string[] parameters)
-        {
-            Debug.WriteLine($"LogEvent {message}");
-            var ignore = LogEventAsync(message,parameters);
-        }
 
         /// <summary>
         /// Log an event asynchronously
@@ -133,15 +93,6 @@ namespace Commonality
         }
 
         /// <summary>
-        /// Log an informative message
-        /// </summary>
-        /// <param name="message">Descriptive message of what's goig on. Usually detailed</param>
-        public void LogInfo(string message)
-        {
-            var ignore = LogInfoAsync(message);
-        }
-
-        /// <summary>
         /// Log an informative message, asynchronously
         /// </summary>
         /// <param name="message">Descriptive message of what's goig on. Usually detailed</param>
@@ -153,14 +104,6 @@ namespace Commonality
         #endregion
 
         #region Additional public interface
-
-        /// <summary>
-        /// Await until the current log has written
-        /// </summary>
-        /// <remarks>
-        /// Useful for unit testing the non-async methods
-        /// </remarks>
-        /// <returns></returns>
 
         /// <summary>
         /// Retrieve listing of all the log files

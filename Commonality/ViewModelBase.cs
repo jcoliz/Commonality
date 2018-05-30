@@ -73,7 +73,7 @@ namespace Commonality
                 else
                     ExceptionRaised?.Invoke(this, ex);
 
-                Logger?.LogError(ex);
+                Logger?.LogErrorAsync(ex);
             }
             catch (Exception)
             {
