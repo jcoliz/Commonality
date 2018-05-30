@@ -32,6 +32,11 @@ namespace Commonality
         /// </summary>
         public event PropertyChangedEventHandler PropertyChanged;
 
+        protected ViewModelBase(ILogger logger)
+        {
+            Logger = logger;
+        }
+
         /// <summary>
         /// Raise the ExceptionRaised event
         /// </summary>
@@ -132,7 +137,7 @@ namespace Commonality
         }
 
         #region Service Locator services
-        private ILogger Logger => Service.TryGet<ILogger>();
+        private ILogger Logger;
         #endregion
     }
 }
