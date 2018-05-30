@@ -19,9 +19,9 @@ namespace Commonality
         /// <summary>
         /// Default constructor
         /// </summary>
-        public Clock()
+        public Clock(ISettings settings)
         {
-
+            Settings = settings;
         }
 
         /// <summary>
@@ -63,7 +63,7 @@ namespace Commonality
         /// <remarks>
         /// If no settings service is found, offset is not persisted to settings.
         /// </remarks>
-        private ISettings Settings => Service.TryGet<ISettings>();
+        private ISettings Settings;
 
         /// <summary>
         /// Amount to offset internal time from the local time
