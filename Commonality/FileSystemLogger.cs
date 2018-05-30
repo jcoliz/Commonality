@@ -253,8 +253,10 @@ namespace Commonality
         /// If there IS a platform clock use that for time, else just pick up regular
         /// system time.
         /// </summary>
-        protected DateTime Time => Service.TryGet<IClock>()?.Now ?? DateTime.Now;
+        protected DateTime Time => Clock?.Now ?? DateTime.Now;
         #endregion
+
+        private IClock Clock => Service.TryGet<IClock>();
     }
 
     /// <summary>

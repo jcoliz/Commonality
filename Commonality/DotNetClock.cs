@@ -12,6 +12,7 @@ namespace Commonality
     /// 
     /// Service Dependencies:
     ///     * ILogger
+    ///     * ISettings
     /// </remarks>
     public class Clock : IClock
     {
